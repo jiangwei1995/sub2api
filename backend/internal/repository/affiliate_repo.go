@@ -87,8 +87,15 @@ func (r *affiliateRepository) BindInviter(ctx context.Context, userID, inviterID
 }
 
 func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours int) (bool, error) {
+	return r.AccrueQuotaAtLevel(ctx, inviterID, inviteeUserID, amount, freezeHours, 1)
+}
+
+func (r *affiliateRepository) AccrueQuotaAtLevel(ctx context.Context, inviterID, inviteeUserID int64, amount float64, freezeHours, level int) (bool, error) {
 	if amount <= 0 {
 		return false, nil
+	}
+	if level <= 0 {
+		level = 1
 	}
 
 	var applied bool
@@ -112,15 +119,15 @@ func (r *affiliateRepository) AccrueQuota(ctx context.Context, inviterID, invite
 
 		if freezeHours > 0 {
 			if _, err = txClient.ExecContext(txCtx, `
-INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, frozen_until, created_at, updated_at)
-VALUES ($1, 'accrue', $2, $3, NOW() + make_interval(hours => $4), NOW(), NOW())`,
-				inviterID, amount, inviteeUserID, freezeHours); err != nil {
+INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, level, frozen_until, created_at, updated_at)
+VALUES ($1, 'accrue', $2, $3, $4, NOW() + make_interval(hours => $5), NOW(), NOW())`,
+				inviterID, amount, inviteeUserID, level, freezeHours); err != nil {
 				return fmt.Errorf("insert affiliate accrue ledger: %w", err)
 			}
 		} else {
 			if _, err = txClient.ExecContext(txCtx, `
-INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, created_at, updated_at)
-VALUES ($1, 'accrue', $2, $3, NOW(), NOW())`, inviterID, amount, inviteeUserID); err != nil {
+INSERT INTO user_affiliate_ledger (user_id, action, amount, source_user_id, level, created_at, updated_at)
+VALUES ($1, 'accrue', $2, $3, $4, NOW(), NOW())`, inviterID, amount, inviteeUserID, level); err != nil {
 				return fmt.Errorf("insert affiliate accrue ledger: %w", err)
 			}
 		}
@@ -135,10 +142,19 @@ VALUES ($1, 'accrue', $2, $3, NOW(), NOW())`, inviterID, amount, inviteeUserID);
 }
 
 func (r *affiliateRepository) GetAccruedRebateFromInvitee(ctx context.Context, inviterID, inviteeUserID int64) (float64, error) {
+	return r.GetAccruedRebateFromInviteeByLevel(ctx, inviterID, inviteeUserID, 1)
+}
+
+func (r *affiliateRepository) GetAccruedRebateFromInviteeByLevel(ctx context.Context, inviterID, inviteeUserID int64, level int) (float64, error) {
+	if level <= 0 {
+		level = 1
+	}
 	client := clientFromContext(ctx, r.client)
 	rows, err := client.QueryContext(ctx,
-		`SELECT COALESCE(SUM(amount), 0)::double precision FROM user_affiliate_ledger WHERE user_id = $1 AND source_user_id = $2 AND action = 'accrue'`,
-		inviterID, inviteeUserID)
+		`SELECT COALESCE(SUM(amount), 0)::double precision
+FROM user_affiliate_ledger
+WHERE user_id = $1 AND source_user_id = $2 AND action = 'accrue' AND level = $3`,
+		inviterID, inviteeUserID, level)
 	if err != nil {
 		return 0, fmt.Errorf("query accrued rebate from invitee: %w", err)
 	}
@@ -296,20 +312,43 @@ func (r *affiliateRepository) ListInvitees(ctx context.Context, inviterID int64,
 	}
 	client := clientFromContext(ctx, r.client)
 	rows, err := client.QueryContext(ctx, `
-SELECT ua.user_id,
-       COALESCE(u.email, ''),
-       COALESCE(u.username, ''),
-       ua.created_at,
-       COALESCE(SUM(ual.amount), 0)::double precision AS total_rebate
-FROM user_affiliates ua
-LEFT JOIN users u ON u.id = ua.user_id
-LEFT JOIN user_affiliate_ledger ual
-       ON ual.user_id = $1
-      AND ual.source_user_id = ua.user_id
-      AND ual.action = 'accrue'
-WHERE ua.inviter_id = $1
-GROUP BY ua.user_id, u.email, u.username, ua.created_at
-ORDER BY ua.created_at DESC
+SELECT user_id, email, username, created_at, total_rebate, level
+FROM (
+    SELECT ua.user_id,
+           COALESCE(u.email, '') AS email,
+           COALESCE(u.username, '') AS username,
+           ua.created_at,
+           COALESCE(SUM(ual.amount) FILTER (WHERE ual.level = 1), 0)::double precision AS total_rebate,
+           1 AS level
+    FROM user_affiliates ua
+    LEFT JOIN users u ON u.id = ua.user_id
+    LEFT JOIN user_affiliate_ledger ual
+           ON ual.user_id = $1
+          AND ual.source_user_id = ua.user_id
+          AND ual.action = 'accrue'
+    WHERE ua.inviter_id = $1
+    GROUP BY ua.user_id, u.email, u.username, ua.created_at
+
+    UNION ALL
+
+    SELECT ua2.user_id,
+           COALESCE(u2.email, '') AS email,
+           COALESCE(u2.username, '') AS username,
+           ua2.created_at,
+           COALESCE(SUM(ual.amount) FILTER (WHERE ual.level = 2), 0)::double precision AS total_rebate,
+           2 AS level
+    FROM user_affiliates ua2
+    LEFT JOIN users u2 ON u2.id = ua2.user_id
+    LEFT JOIN user_affiliate_ledger ual
+           ON ual.user_id = $1
+          AND ual.source_user_id = ua2.user_id
+          AND ual.action = 'accrue'
+    WHERE ua2.inviter_id IN (
+        SELECT user_id FROM user_affiliates WHERE inviter_id = $1
+    )
+    GROUP BY ua2.user_id, u2.email, u2.username, ua2.created_at
+) invitees
+ORDER BY level ASC, created_at DESC
 LIMIT $2`, inviterID, limit)
 	if err != nil {
 		return nil, err
@@ -320,7 +359,7 @@ LIMIT $2`, inviterID, limit)
 	for rows.Next() {
 		var item service.AffiliateInvitee
 		var createdAt time.Time
-		if err := rows.Scan(&item.UserID, &item.Email, &item.Username, &createdAt, &item.TotalRebate); err != nil {
+		if err := rows.Scan(&item.UserID, &item.Email, &item.Username, &createdAt, &item.TotalRebate, &item.Level); err != nil {
 			return nil, err
 		}
 		item.CreatedAt = &createdAt
@@ -390,6 +429,7 @@ SELECT user_id,
        aff_code,
        aff_code_custom,
        aff_rebate_rate_percent,
+       aff_rebate_rate_level2_percent,
        inviter_id,
        aff_count,
        aff_quota::double precision,
@@ -413,11 +453,13 @@ WHERE user_id = $1`, userID)
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
 	var rebateRate sql.NullFloat64
+	var rebateRateLevel2 sql.NullFloat64
 	if err := rows.Scan(
 		&out.UserID,
 		&out.AffCode,
 		&out.AffCodeCustom,
 		&rebateRate,
+		&rebateRateLevel2,
 		&inviterID,
 		&out.AffCount,
 		&out.AffQuota,
@@ -435,6 +477,10 @@ WHERE user_id = $1`, userID)
 		v := rebateRate.Float64
 		out.AffRebateRatePercent = &v
 	}
+	if rebateRateLevel2.Valid {
+		v := rebateRateLevel2.Float64
+		out.AffRebateRateLevel2Percent = &v
+	}
 	return &out, nil
 }
 
@@ -444,6 +490,7 @@ SELECT user_id,
        aff_code,
        aff_code_custom,
        aff_rebate_rate_percent,
+       aff_rebate_rate_level2_percent,
        inviter_id,
        aff_count,
        aff_quota::double precision,
@@ -469,11 +516,13 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	var out service.AffiliateSummary
 	var inviterID sql.NullInt64
 	var rebateRate sql.NullFloat64
+	var rebateRateLevel2 sql.NullFloat64
 	if err := rows.Scan(
 		&out.UserID,
 		&out.AffCode,
 		&out.AffCodeCustom,
 		&rebateRate,
+		&rebateRateLevel2,
 		&inviterID,
 		&out.AffCount,
 		&out.AffQuota,
@@ -490,6 +539,10 @@ LIMIT 1`, strings.ToUpper(strings.TrimSpace(code)))
 	if rebateRate.Valid {
 		v := rebateRate.Float64
 		out.AffRebateRatePercent = &v
+	}
+	if rebateRateLevel2.Valid {
+		v := rebateRateLevel2.Float64
+		out.AffRebateRateLevel2Percent = &v
 	}
 	return &out, nil
 }
@@ -639,6 +692,31 @@ WHERE user_id = $2`, nullableArg(ratePercent), userID)
 	})
 }
 
+// SetUserRebateRateLevel2 设置或清除用户专属二级返利比例。ratePercent==nil 表示清除（沿用全局）。
+func (r *affiliateRepository) SetUserRebateRateLevel2(ctx context.Context, userID int64, ratePercent *float64) error {
+	if userID <= 0 {
+		return service.ErrUserNotFound
+	}
+	return r.withTx(ctx, func(txCtx context.Context, txClient *dbent.Client) error {
+		if _, err := ensureUserAffiliateWithClient(txCtx, txClient, userID); err != nil {
+			return err
+		}
+		res, err := txClient.ExecContext(txCtx, `
+UPDATE user_affiliates
+SET aff_rebate_rate_level2_percent = $1,
+    updated_at = NOW()
+WHERE user_id = $2`, nullableArg(ratePercent), userID)
+		if err != nil {
+			return fmt.Errorf("set aff_rebate_rate_level2_percent: %w", err)
+		}
+		affected, _ := res.RowsAffected()
+		if affected == 0 {
+			return service.ErrUserNotFound
+		}
+		return nil
+	})
+}
+
 // BatchSetUserRebateRate 批量为多个用户设置专属比例（nil 清除）。
 func (r *affiliateRepository) BatchSetUserRebateRate(ctx context.Context, userIDs []int64, ratePercent *float64) error {
 	if len(userIDs) == 0 {
@@ -694,7 +772,7 @@ func (r *affiliateRepository) ListUsersWithCustomSettings(ctx context.Context, f
 	const baseFrom = `
 FROM user_affiliates ua
 JOIN users u ON u.id = ua.user_id
-WHERE (ua.aff_code_custom = true OR ua.aff_rebate_rate_percent IS NOT NULL)
+WHERE (ua.aff_code_custom = true OR ua.aff_rebate_rate_percent IS NOT NULL OR ua.aff_rebate_rate_level2_percent IS NOT NULL)
   AND (u.email ILIKE $1 OR u.username ILIKE $1)`
 
 	client := clientFromContext(ctx, r.client)
@@ -711,6 +789,7 @@ SELECT ua.user_id,
        ua.aff_code,
        ua.aff_code_custom,
        ua.aff_rebate_rate_percent,
+       ua.aff_rebate_rate_level2_percent,
        ua.aff_count` + baseFrom + `
 ORDER BY ua.updated_at DESC
 LIMIT $2 OFFSET $3`
@@ -725,13 +804,18 @@ LIMIT $2 OFFSET $3`
 	for rows.Next() {
 		var e service.AffiliateAdminEntry
 		var rebate sql.NullFloat64
+		var rebateLevel2 sql.NullFloat64
 		if err := rows.Scan(&e.UserID, &e.Email, &e.Username, &e.AffCode,
-			&e.AffCodeCustom, &rebate, &e.AffCount); err != nil {
+			&e.AffCodeCustom, &rebate, &rebateLevel2, &e.AffCount); err != nil {
 			return nil, 0, err
 		}
 		if rebate.Valid {
 			v := rebate.Float64
 			e.AffRebateRatePercent = &v
+		}
+		if rebateLevel2.Valid {
+			v := rebateLevel2.Float64
+			e.AffRebateRateLevel2Percent = &v
 		}
 		entries = append(entries, e)
 	}

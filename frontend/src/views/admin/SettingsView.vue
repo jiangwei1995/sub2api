@@ -3900,6 +3900,27 @@
 
               <div>
                 <label class="input-label">
+                  {{ t('admin.settings.features.affiliate.rebateRateLevel2') }}
+                </label>
+                <div class="relative">
+                  <input
+                    v-model.number="form.affiliate_rebate_rate_level2"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    class="input pr-8"
+                    placeholder="0"
+                  />
+                  <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                </div>
+                <p class="mt-1 text-xs text-gray-400">
+                  {{ t('admin.settings.features.affiliate.rebateRateLevel2Hint') }}
+                </p>
+              </div>
+
+              <div>
+                <label class="input-label">
                   {{ t('admin.settings.features.affiliate.freezeHours') }}
                 </label>
                 <input
@@ -4180,6 +4201,25 @@
                 </div>
                 <p class="mt-1 text-xs text-gray-400">
                   {{ t('admin.settings.features.affiliate.modal.rateHint') }}
+                </p>
+              </div>
+
+              <div>
+                <label class="input-label">{{ t('admin.settings.features.affiliate.modal.rateLevel2Label') }}</label>
+                <div class="relative">
+                  <input
+                    v-model="affiliateModal.rateLevel2"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    class="input pr-8"
+                    :placeholder="t('admin.settings.features.affiliate.modal.rateLevel2Placeholder')"
+                  />
+                  <span class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">%</span>
+                </div>
+                <p class="mt-1 text-xs text-gray-400">
+                  {{ t('admin.settings.features.affiliate.modal.rateLevel2Hint') }}
                 </p>
               </div>
             </div>
@@ -5383,6 +5423,7 @@ const form = reactive<SettingsForm>({
   totp_encryption_key_configured: false,
   default_balance: 0,
   affiliate_rebate_rate: 20,
+  affiliate_rebate_rate_level2: 0,
   affiliate_rebate_freeze_hours: 0,
   affiliate_rebate_duration_days: 0,
   affiliate_rebate_per_invitee_cap: 0,
@@ -6313,6 +6354,10 @@ async function saveSettings() {
       affiliate_rebate_rate: Math.min(
         100,
         Math.max(0, Number(form.affiliate_rebate_rate) || 0),
+      ),
+      affiliate_rebate_rate_level2: Math.min(
+        100,
+        Math.max(0, Number(form.affiliate_rebate_rate_level2) || 0),
       ),
       affiliate_rebate_freeze_hours: Math.max(0, Math.min(720, Number(form.affiliate_rebate_freeze_hours) || 0)),
       affiliate_rebate_duration_days: Math.max(0, Math.min(3650, Math.floor(Number(form.affiliate_rebate_duration_days) || 0))),
@@ -7279,6 +7324,7 @@ interface AffiliateModalState {
   editingEntry: AffiliateAdminEntry | null;
   code: string;
   rate: string | number;
+  rateLevel2: string | number;
   searchTimer: number | null;
 }
 
@@ -7292,6 +7338,7 @@ const affiliateModal = reactive<AffiliateModalState>({
   editingEntry: null,
   code: "",
   rate: "",
+  rateLevel2: "",
   searchTimer: null,
 });
 
@@ -7437,6 +7484,8 @@ function openAffiliateModal(entry: AffiliateAdminEntry | null) {
   affiliateModal.code = entry?.aff_code_custom ? entry.aff_code : "";
   affiliateModal.rate =
     entry?.aff_rebate_rate_percent != null ? String(entry.aff_rebate_rate_percent) : "";
+  affiliateModal.rateLevel2 =
+    entry?.aff_rebate_rate_level2_percent != null ? String(entry.aff_rebate_rate_level2_percent) : "";
 }
 
 function closeAffiliateModal() {
@@ -7486,12 +7535,16 @@ const affiliateModalCanSubmit = computed(() => {
   }
   const codeFilled = affiliateModal.code.trim() !== "";
   const rateFilled = String(affiliateModal.rate ?? "").trim() !== "";
-  if (codeFilled || rateFilled) return true;
+  const rateLevel2Filled = String(affiliateModal.rateLevel2 ?? "").trim() !== "";
+  if (codeFilled || rateFilled || rateLevel2Filled) return true;
   // Edit mode + empty rate input is a meaningful "clear" only if the user
   // currently has an exclusive rate to clear.
   return (
     affiliateModal.mode === "edit" &&
-    affiliateModal.editingEntry?.aff_rebate_rate_percent != null
+    (
+      affiliateModal.editingEntry?.aff_rebate_rate_percent != null ||
+      affiliateModal.editingEntry?.aff_rebate_rate_level2_percent != null
+    )
   );
 });
 
@@ -7521,6 +7574,16 @@ async function submitAffiliateModal() {
     }
   } else {
     payload.aff_rebate_rate_percent = rateInput;
+  }
+
+  const rateLevel2Input = parseRebateRate(affiliateModal.rateLevel2);
+  if (rateLevel2Input === undefined) return;
+  if (rateLevel2Input === null) {
+    if (affiliateModal.mode === "edit" && affiliateModal.editingEntry?.aff_rebate_rate_level2_percent != null) {
+      payload.clear_rebate_rate_level2 = true;
+    }
+  } else {
+    payload.aff_rebate_rate_level2_percent = rateLevel2Input;
   }
 
   affiliateModal.saving = true;

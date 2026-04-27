@@ -21,6 +21,7 @@ const (
 // Affiliate rebate settings
 const (
 	AffiliateRebateRateDefault          = 20.0
+	AffiliateRebateRateL2Default        = 0.0
 	AffiliateRebateRateMin              = 0.0
 	AffiliateRebateRateMax              = 100.0
 	AffiliateEnabledDefault             = false // 邀请返利总开关默认关闭
@@ -102,6 +103,7 @@ const (
 	SettingKeyInvitationCodeEnabled            = "invitation_code_enabled"             // 是否启用邀请码注册
 	SettingKeyAffiliateEnabled                 = "affiliate_enabled"                   // 邀请返利功能总开关
 	SettingKeyAffiliateRebateRate              = "affiliate_rebate_rate"               // 邀请返利比例（百分比，0-100）
+	SettingKeyAffiliateRebateRateL2            = "affiliate_rebate_rate_level2"        // 二级邀请返利比例（百分比，0-100）
 	SettingKeyAffiliateRebateFreezeHours       = "affiliate_rebate_freeze_hours"       // 返利冻结期（小时，0=不冻结）
 	SettingKeyAffiliateRebateDurationDays      = "affiliate_rebate_duration_days"      // 返利有效期（天，0=永久）
 	SettingKeyAffiliateRebatePerInviteeCap     = "affiliate_rebate_per_invitee_cap"    // 单人返利上限（0=无上限）

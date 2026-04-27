@@ -126,7 +126,19 @@
                   class="border-b border-gray-100 last:border-b-0 dark:border-dark-800"
                 >
                   <td class="px-3 py-3 text-gray-900 dark:text-white">{{ item.email || '-' }}</td>
-                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ item.username || '-' }}</td>
+                  <td class="px-3 py-3 text-gray-700 dark:text-gray-300">
+                    <div class="flex items-center gap-2">
+                      <span>{{ item.username || '-' }}</span>
+                      <span
+                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium"
+                        :class="item.level === 1
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                          : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'"
+                      >
+                        {{ item.level === 1 ? t('affiliate.invitees.direct') : t('affiliate.invitees.indirect') }}
+                      </span>
+                    </div>
+                  </td>
                   <td class="px-3 py-3 text-right font-medium text-emerald-600 dark:text-emerald-400">{{ formatCurrency(item.total_rebate) }}</td>
                   <td class="px-3 py-3 text-gray-700 dark:text-gray-300">{{ formatDateTime(item.created_at) || '-' }}</td>
                 </tr>

@@ -1008,6 +1008,8 @@ export default {
     invitees: {
       title: '已邀请用户',
       empty: '暂无邀请记录',
+      direct: '直接邀请',
+      indirect: '间接邀请',
       columns: {
         email: '邮箱',
         username: '用户名',
@@ -4955,6 +4957,8 @@ export default {
           enabledHint: '关闭后用户菜单中的邀请页面入口隐藏、注册时忽略邀请码、新充值不再产生返利。已有返利额度仍可转入余额。',
           rebateRate: '全局返利比例',
           rebateRateHint: '充值后返给邀请人的默认比例（0-100%，例如填写 10 表示返利 10%）。',
+          rebateRateLevel2: '二级返利率 (%)',
+          rebateRateLevel2Hint: '当你的直接邀请人再邀请新用户时，该新用户充值后返给你的默认二级比例（0-100%）。',
           freezeHours: '返利冻结期（小时）',
           freezeHoursDesc: '新产生的返利将在冻结期内无法提现。0 = 不冻结。',
           durationDays: '返利有效期（天）',
@@ -4963,7 +4967,7 @@ export default {
           perInviteeCapDesc: '每个被邀请用户最多产生的返利总额。0 = 无上限。',
           customUsers: {
             title: '专属用户配置',
-            description: '为指定用户设置专属邀请码或专属返利比例。仅展示已设置过专属配置的用户。',
+            description: '为指定用户设置专属邀请码、一级专属返利比例或二级专属返利比例。仅展示已设置过专属配置的用户。',
             addButton: '添加专属用户',
             searchPlaceholder: '搜索邮箱或用户名',
             batchButton: '批量设置比例（已选 {count}）',
@@ -4971,7 +4975,7 @@ export default {
             customBadge: '自定义',
             useGlobal: '沿用全局',
             resetTitle: '重置该用户的专属配置',
-            resetMessage: '确认将 {email} 的专属配置全部重置为默认？\n• 专属返利比例将清除（沿用全局）\n• 邀请码将重新生成为系统随机码（已分发的旧邀请链接将失效）',
+            resetMessage: '确认将 {email} 的专属配置全部重置为默认？\n• 一级/二级专属返利比例都将清除（沿用全局）\n• 邀请码将重新生成为系统随机码（已分发的旧邀请链接将失效）',
             totalLabel: '共 {total} 条',
             col: {
               email: '邮箱',
@@ -4993,8 +4997,11 @@ export default {
             rateLabel: '专属返利比例（可选）',
             ratePlaceholder: '例如 30',
             rateHint: '0-100%；留空（编辑模式下）表示清除专属比例并沿用全局。',
+            rateLevel2Label: '二级专属利率（可选）',
+            rateLevel2Placeholder: '例如 5',
+            rateLevel2Hint: '0-100%；留空（编辑模式下）表示清除二级专属比例并沿用全局。',
             errorBadRate: '请输入 0-100 之间的比例',
-            errorEmpty: '至少填写一项：专属邀请码或专属返利比例',
+            errorEmpty: '至少填写一项：专属邀请码、专属返利比例或二级专属利率',
           },
           batchModal: {
             title: '批量设置专属比例（已选 {count} 个用户）',

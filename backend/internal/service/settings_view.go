@@ -108,6 +108,7 @@ type SystemSettings struct {
 	DefaultBalance               float64
 	AffiliateEnabled             bool
 	AffiliateRebateRate          float64
+	AffiliateRebateRateLevel2    float64
 	AffiliateRebateFreezeHours   int
 	AffiliateRebateDurationDays  int
 	AffiliateRebatePerInviteeCap float64

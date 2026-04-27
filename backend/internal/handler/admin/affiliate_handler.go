@@ -48,11 +48,13 @@ func (h *AffiliateHandler) ListUsers(c *gin.Context) {
 //
 // Both fields are optional and applied independently.
 type UpdateAffiliateUserRequest struct {
-	AffCode              *string  `json:"aff_code"`
-	AffRebateRatePercent *float64 `json:"aff_rebate_rate_percent"`
+	AffCode                    *string  `json:"aff_code"`
+	AffRebateRatePercent       *float64 `json:"aff_rebate_rate_percent"`
+	AffRebateRateLevel2Percent *float64 `json:"aff_rebate_rate_level2_percent,omitempty"`
 	// ClearRebateRate explicitly clears the per-user rate (sets it to NULL).
 	// Used to disambiguate from "field not provided".
-	ClearRebateRate bool `json:"clear_rebate_rate"`
+	ClearRebateRate       bool `json:"clear_rebate_rate"`
+	ClearRebateRateLevel2 bool `json:"clear_rebate_rate_level2,omitempty"`
 }
 
 func (h *AffiliateHandler) UpdateUserSettings(c *gin.Context) {
@@ -87,6 +89,18 @@ func (h *AffiliateHandler) UpdateUserSettings(c *gin.Context) {
 		}
 	}
 
+	if req.ClearRebateRateLevel2 {
+		if err := h.affiliateService.AdminSetUserRebateRateLevel2(c.Request.Context(), userID, nil); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+	} else if req.AffRebateRateLevel2Percent != nil {
+		if err := h.affiliateService.AdminSetUserRebateRateLevel2(c.Request.Context(), userID, req.AffRebateRateLevel2Percent); err != nil {
+			response.ErrorFrom(c, err)
+			return
+		}
+	}
+
 	response.Success(c, gin.H{"user_id": userID})
 }
 
@@ -104,6 +118,10 @@ func (h *AffiliateHandler) ClearUserSettings(c *gin.Context) {
 		return
 	}
 	if err := h.affiliateService.AdminSetUserRebateRate(c.Request.Context(), userID, nil); err != nil {
+		response.ErrorFrom(c, err)
+		return
+	}
+	if err := h.affiliateService.AdminSetUserRebateRateLevel2(c.Request.Context(), userID, nil); err != nil {
 		response.ErrorFrom(c, err)
 		return
 	}

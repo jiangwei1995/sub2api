@@ -131,6 +131,7 @@ export interface AffiliateInvitee {
   username: string
   created_at?: string
   total_rebate: number
+  level: 1 | 2
 }
 
 export interface UserAffiliateDetail {

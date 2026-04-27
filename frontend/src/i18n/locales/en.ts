@@ -1004,6 +1004,8 @@ export default {
     invitees: {
       title: 'Invited Users',
       empty: 'No invited users yet',
+      direct: 'Direct',
+      indirect: 'Indirect',
       columns: {
         email: 'Email',
         username: 'Username',
@@ -4792,6 +4794,8 @@ export default {
           enabledHint: 'When off, the affiliate menu is hidden, the aff parameter is ignored at signup, and new recharges generate no rebate. Existing rebate balances can still be transferred.',
           rebateRate: 'Global Rebate Rate',
           rebateRateHint: 'Default percentage given back to the inviter on recharges (0-100, e.g. 10 = 10%).',
+          rebateRateLevel2: 'Level-2 Rebate Rate (%)',
+          rebateRateLevel2Hint: 'Default percentage credited to the upstream inviter when a direct invitee invites another paying user (0-100).',
           freezeHours: 'Rebate Freeze Period (hours)',
           freezeHoursDesc: 'New rebates will be frozen for this period before becoming available for withdrawal. 0 = no freeze.',
           durationDays: 'Rebate Duration (days)',
@@ -4800,7 +4804,7 @@ export default {
           perInviteeCapDesc: 'Maximum total rebate from a single invitee. 0 = no limit.',
           customUsers: {
             title: 'Per-User Overrides',
-            description: 'Set a custom invite code or exclusive rebate rate for specific users. Lists only users that have an override applied.',
+            description: 'Set a custom invite code, exclusive level-1 rebate rate, or exclusive level-2 rebate rate for specific users. Lists only users that have an override applied.',
             addButton: 'Add Custom User',
             searchPlaceholder: 'Search by email or username',
             batchButton: 'Batch Set Rate ({count} selected)',
@@ -4808,7 +4812,7 @@ export default {
             customBadge: 'custom',
             useGlobal: 'use global',
             resetTitle: 'Reset Custom Settings',
-            resetMessage: 'Reset all custom settings for {email}?\n• The exclusive rebate rate will be cleared (fall back to the global rate)\n• The invite code will be regenerated as a new system code (previously shared links will stop working)',
+            resetMessage: 'Reset all custom settings for {email}?\n• The exclusive level-1 and level-2 rebate rates will be cleared (fall back to the global rate)\n• The invite code will be regenerated as a new system code (previously shared links will stop working)',
             totalLabel: '{total} total',
             col: {
               email: 'Email',
@@ -4830,8 +4834,11 @@ export default {
             rateLabel: 'Exclusive Rebate Rate (optional)',
             ratePlaceholder: 'e.g. 30',
             rateHint: '0-100. Leave empty (in edit mode) to clear and fall back to the global rate.',
+            rateLevel2Label: 'Exclusive Level-2 Rate (optional)',
+            rateLevel2Placeholder: 'e.g. 5',
+            rateLevel2Hint: '0-100. Leave empty (in edit mode) to clear the level-2 override and fall back to the global rate.',
             errorBadRate: 'Please enter a number between 0 and 100',
-            errorEmpty: 'Fill at least one: custom invite code or exclusive rebate rate',
+            errorEmpty: 'Fill at least one: custom invite code, exclusive rebate rate, or exclusive level-2 rate',
           },
           batchModal: {
             title: 'Batch Set Rate ({count} users selected)',
