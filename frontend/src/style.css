@@ -225,6 +225,38 @@
     @apply shadow-glass;
   }
 
+  .theme-shell {
+    @apply relative overflow-hidden bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100;
+    @apply dark:from-dark-950 dark:via-dark-900 dark:to-dark-950;
+  }
+
+  .theme-shell-backdrop {
+    @apply pointer-events-none fixed inset-0 overflow-hidden;
+  }
+
+  .theme-shell-orb {
+    @apply absolute rounded-full blur-3xl;
+  }
+
+  .theme-shell-orb-top-right {
+    @apply -right-40 -top-40 h-80 w-80 bg-primary-400/20;
+  }
+
+  .theme-shell-orb-bottom-left {
+    @apply -bottom-40 -left-40 h-80 w-80 bg-primary-500/15;
+  }
+
+  .theme-shell-orb-center {
+    @apply left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 bg-primary-300/10;
+  }
+
+  .theme-shell-grid {
+    @apply absolute inset-0 bg-[size:64px_64px];
+    background-image:
+      linear-gradient(rgba(18, 190, 169, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(18, 190, 169, 0.04) 1px, transparent 1px);
+  }
+
   .card-header {
     @apply border-b border-gray-100 dark:border-dark-700;
     @apply px-6 py-4;

@@ -1,14 +1,18 @@
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-dark-950">
-    <!-- Background Decoration -->
-    <div class="pointer-events-none fixed inset-0 bg-mesh-gradient"></div>
+  <div class="theme-shell min-h-screen">
+    <div class="theme-shell-backdrop">
+      <div class="theme-shell-orb theme-shell-orb-top-right"></div>
+      <div class="theme-shell-orb theme-shell-orb-bottom-left"></div>
+      <div class="theme-shell-orb theme-shell-orb-center"></div>
+      <div class="theme-shell-grid"></div>
+    </div>
 
     <!-- Sidebar -->
     <AppSidebar />
 
     <!-- Main Content Area -->
     <div
-      class="relative min-h-screen transition-all duration-300"
+      class="relative z-10 min-h-screen transition-all duration-300"
       :class="[sidebarCollapsed ? 'lg:ml-[72px]' : 'lg:ml-64']"
     >
       <!-- Header -->
