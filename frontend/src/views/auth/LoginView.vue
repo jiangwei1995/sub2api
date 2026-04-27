@@ -3,10 +3,10 @@
     <div class="space-y-6">
       <!-- Title -->
       <div class="text-center">
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <h2 class="auth-heading">
           {{ t('auth.welcomeBack') }}
         </h2>
-        <p class="mt-2 text-sm text-gray-500 dark:text-dark-400">
+        <p class="auth-subheading">
           {{ t('auth.signInToAccount') }}
         </p>
       </div>
@@ -29,11 +29,11 @@
           :show-divider="false"
         />
         <div class="flex items-center gap-3">
-          <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
-          <span class="text-xs text-gray-500 dark:text-dark-400">
+          <div class="auth-divider-line"></div>
+          <span class="auth-divider-text">
             {{ t('auth.oauthOrContinue') }}
           </span>
-          <div class="h-px flex-1 bg-gray-200 dark:bg-dark-700"></div>
+          <div class="auth-divider-line"></div>
         </div>
       </div>
 
@@ -41,12 +41,12 @@
       <form @submit.prevent="handleLogin" class="space-y-5">
         <!-- Email Input -->
         <div>
-          <label for="email" class="input-label">
+          <label for="email" class="auth-label">
             {{ t('auth.emailLabel') }}
           </label>
           <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Icon name="mail" size="md" class="text-gray-400 dark:text-dark-500" />
+              <Icon name="mail" size="md" class="auth-input-icon" />
             </div>
             <input
               id="email"
@@ -56,7 +56,7 @@
               autofocus
               autocomplete="email"
               :disabled="isLoading"
-              class="input pl-11"
+              class="auth-input pl-11"
               :class="{ 'input-error': errors.email }"
               :placeholder="t('auth.emailPlaceholder')"
             />
@@ -65,12 +65,12 @@
 
         <!-- Password Input -->
         <div>
-          <label for="password" class="input-label">
+          <label for="password" class="auth-label">
             {{ t('auth.passwordLabel') }}
           </label>
           <div class="relative">
             <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <Icon name="lock" size="md" class="text-gray-400 dark:text-dark-500" />
+              <Icon name="lock" size="md" class="auth-input-icon" />
             </div>
             <input
               id="password"
@@ -79,14 +79,14 @@
               required
               autocomplete="current-password"
               :disabled="isLoading"
-              class="input pl-11 pr-11"
+              class="auth-input pl-11 pr-11"
               :class="{ 'input-error': errors.password }"
               :placeholder="t('auth.passwordPlaceholder')"
             />
             <button
               type="button"
               @click="showPassword = !showPassword"
-              class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-dark-300"
+              class="auth-input-action absolute inset-y-0 right-0 flex items-center pr-3.5"
             >
               <Icon v-if="showPassword" name="eyeOff" size="md" />
               <Icon v-else name="eye" size="md" />
@@ -119,7 +119,7 @@
         <button
           type="submit"
           :disabled="isLoading || (turnstileEnabled && !turnstileToken)"
-          class="btn btn-primary w-full"
+          class="auth-submit-button"
         >
           <svg
             v-if="isLoading"
@@ -149,11 +149,11 @@
 
     <!-- Footer -->
     <template v-if="!backendModeEnabled" #footer>
-      <p class="text-gray-500 dark:text-dark-400">
+      <p class="auth-footer-copy">
         {{ t('auth.dontHaveAccount') }}
         <router-link
           to="/register"
-          class="font-medium text-primary-600 transition-colors hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
+          class="auth-footer-link"
         >
           {{ t('auth.signUp') }}
         </router-link>
